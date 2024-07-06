@@ -4,11 +4,13 @@ import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FaFileUpload } from "react-icons/fa";
-import ConvertToPdf from "./convertToPdf";
+import { useRouter } from "next/navigation";
+import { useFileContext } from "@/context/FileContext";
 
 const UploadInput = () => {
-  const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const {setFiles} = useFileContext();
   const handleButtonClick = () => {
     setFiles([]);
     fileInputRef.current?.click();
@@ -19,6 +21,8 @@ const UploadInput = () => {
     if (selectedFiles) {
       const fileArray = Array.from(selectedFiles);
       setFiles(fileArray);
+    //   sessionStorage.setItem('files', JSON.stringify(fileArray));
+      router.push('/convert-to-pdf');
     }
   };
   return (
@@ -40,7 +44,6 @@ const UploadInput = () => {
         accept="image/*"
         multiple
       />
-      {files.length > 0 && <ConvertToPdf files={files} />}
     </div>
   );
 };

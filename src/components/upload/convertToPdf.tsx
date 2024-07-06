@@ -1,19 +1,63 @@
-import React, { useRef, useState } from "react";
-import ImagePreview from "./ImagePreview";
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import ImagePreview from "@/components/upload/ImagePreview";
 import { Button } from "@/components/ui/button";
 import { FaArrowRight } from "react-icons/fa6";
 import jsPDF from "jspdf";
+import { useRouter } from "next/navigation";
+import { useFileContext } from "@/context/FileContext";
+import { CiCirclePlus } from "react-icons/ci";
+import { Input } from "@/components/ui/input";
+import { securePdfFormSchema } from "@/schema";
+import { z } from "zod";
 
-interface convertToPdfProps {
-  files: File[];
-}
-
-const ConvertToPdf = ({ files }: convertToPdfProps) => {
+const ConvertToPdf = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const firstPdfFileName = useRef<string>("");
+  const router = useRouter();
+  const { files, setFiles } = useFileContext();
+  //   const [showPasswordForm, setShowPasswordForm] = useState<boolean>(false);
 
-  const handleConvertToPdf = async () => {
-    const pdf = new jsPDF();
+  useEffect(() => {
+    if (files.length === 0) {
+      router.push("/");
+    }
+  }, [router, files]);
+
+  const handleAddImageClick = () => {
+    console.log("add image clicked");
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files;
+    if (selectedFiles) {
+      const fileArray = [...files, ...Array.from(selectedFiles)];
+      setFiles(fileArray);
+      setPdfUrl(null);
+    }
+  };
+
+  const handleConvertToPdf = async (
+    isSecured: boolean,
+    values?: z.infer<typeof securePdfFormSchema>
+  ) => {
+    let pdf: jsPDF = new jsPDF();
+    // if (values?.password && isSecured) {
+    //   console.log("inside secured");
+    //   pdf = new jsPDF({
+    //     encryption: {
+    //       userPassword: values.password,
+    //       ownerPassword: "owner",
+    //       userPermissions: [],
+    //     },
+    //   });
+    // } else {
+    //   pdf = new jsPDF();
+    // }
+
     const width = pdf.internal.pageSize.getWidth();
     const height = pdf.internal.pageSize.getHeight();
     const padding = 10; // Padding from the edges
@@ -53,10 +97,16 @@ const ConvertToPdf = ({ files }: convertToPdfProps) => {
       });
     }
 
+    // simple logic without password protect
     const pdfBlob = pdf.output("blob");
     const pdfUrl = URL.createObjectURL(pdfBlob);
     setPdfUrl(pdfUrl);
+    // setShowPasswordForm(false);
   };
+
+  //   const handleConvertToPdfWithPassword = () => {
+  //     setShowPasswordForm(true);
+  //   };
 
   const readFileAsDataURL = (file: File): Promise<string> => {
     return new Promise<string>((resolve, reject) => {
@@ -68,21 +118,67 @@ const ConvertToPdf = ({ files }: convertToPdfProps) => {
   };
   return (
     <div className="mt-4">
-      <div className="flex flex-wrap mt-4">
+      <div className="flex flex-wrap gap-x-4 justify-center items-end mt-4">
         {files.map((file, index) => (
           <ImagePreview key={file.name + index} file={file} />
         ))}
-      </div>
-      <div className="flex flex-col my-5 gap-y-4 justify-center items-center">
-        <Button
-          className="px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600"
-          onClick={handleConvertToPdf}
+        {/* plus icon adding new file */}
+        <div
+          className="flex justify-center flex-col items-center border border-gray-400 rounded-full px-8 py-10 mx-4 bg-gray-300 cursor-pointer"
+          onClick={handleAddImageClick}
         >
-          Convert to PDF{" "}
-          <span className="mx-2">
-            <FaArrowRight size={20} color="white" />
-          </span>
-        </Button>
+          <CiCirclePlus size={24} color="black" />
+          <div className="text-xs">Add Images</div>
+        </div>
+        {/* input field for selecting images */}
+        <Input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept="image/*"
+          multiple
+        />
+      </div>
+      <div className="flex flex-col gap-4 justify-center items-center">
+        {!pdfUrl && (
+          <div className="flex justify-center items-center my-4">
+            <Button
+              className="px-4 py-2 mx-5 text-white bg-red-500 rounded hover:bg-red-600"
+              onClick={() => handleConvertToPdf(false)}
+            >
+              {/* <span className="mx-2">
+                <HiLockOpen size={20} color="white" />
+              </span> */}
+              {/* Convert without password{" "} */}
+              Convert{" "}
+              <span className="mx-2">
+                <FaArrowRight size={20} color="white" />
+              </span>
+            </Button>
+            {/* <Button
+              className="px-4 py-2 mx-5 text-white bg-green-500 rounded hover:bg-green-600"
+              onClick={handleConvertToPdfWithPassword}
+            >
+              <span className="mx-2">
+                <HiLockClosed size={20} color="white" />
+              </span>
+              Convert with password{" "}
+              <span className="mx-2">
+                <FaArrowRight size={20} color="white" />
+              </span>
+            </Button> */}
+            {/* <Modal
+              isOpen={showPasswordForm}
+              onClose={() => setShowPasswordForm(false)}
+            >
+              <SecurePdfForm
+                onClose={() => setShowPasswordForm(false)}
+                handleConvertToPdf={handleConvertToPdf}
+              />
+            </Modal> */}
+          </div>
+        )}
         {pdfUrl && (
           <a
             href={pdfUrl}

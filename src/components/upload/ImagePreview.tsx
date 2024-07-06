@@ -5,11 +5,6 @@ interface ImagePreviewProps {
   file: File;
 }
 
-interface ImageDimensionProps {
-  width: number;
-  height: number;
-}
-
 const ImagePreview = ({ file }: ImagePreviewProps) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -21,6 +16,7 @@ const ImagePreview = ({ file }: ImagePreviewProps) => {
     };
     reader.readAsDataURL(file);
   }, [file]);
+
   return (
     <div className="flex flex-col items-center m-2">
       {previewUrl ? (
@@ -34,7 +30,7 @@ const ImagePreview = ({ file }: ImagePreviewProps) => {
       ) : (
         <div className="w-24 h-24 bg-gray-200 animate-pulse" />
       )}
-      <p className="text-sm mt-2">{file.name}</p>
+      <p className="text-sm mt-2">{file.name.length > 12 ? file.name.substring(0,12) + '...' : file.name}</p>
     </div>
   );
 };
